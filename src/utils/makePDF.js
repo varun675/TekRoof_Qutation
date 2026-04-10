@@ -45,8 +45,37 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
   };
 
   const whiteLogoB64 = await processImage(LOGO_B64, { scale: 3, invertWhite: true });
-  const sharpStamp = await processImage(STAMP_B64, { scale: 5 });
-  const sharpSig = await processImage(SIG_B64, { scale: 5 });
+
+  // ── COMPOSITE AUTHORIZATION BLOCK ──
+  const mergedAuth = await new Promise(resolve => {
+    const sImg = new Image(); const sigImg = new Image();
+    let c = 0;
+    const check = () => {
+      if (++c < 2) return;
+      const scale = 8; // High DPI output for crisp PDF printing
+      const sW = 32 * scale, sH = sW * (140 / 88); 
+      const siW = 36 * scale, siH = siW * (80 / 103);
+      const width = Math.max(sW, siW), height = sH;
+      const cvs = document.createElement("canvas");
+      cvs.width = width; cvs.height = height;
+      const ctx = cvs.getContext("2d");
+      
+      // Solid white background prevents PNG alpha fringe rendering bugs in PDF
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, width, height);
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+      
+      // Stamp: faded ink opacity just like the UI preview
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(sImg, (width - sW)/2, 0, sW, sH);
+      
+      // Signature: full opacity laid completely on top
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(sigImg, (width - siW)/2, (height - siH)/2, siW, siH);
+      
+      resolve({ b64: cvs.toDataURL("image/jpeg", 0.95), w: width/scale, h: height/scale });
+    };
+    sImg.src = STAMP_B64; sigImg.src = SIG_B64;
+  });
 
   // ── HEADER ──
   doc.setFillColor(...PR); doc.rect(0, 0, W, 44, "F");
@@ -203,17 +232,10 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
   checkPage(50);
   doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...GR);
   doc.text("AUTHORIZED SIGNATORY",W-M,y,{align:"right"}); y+=7;
-  // Stamp: large. Signature overlaps center of stamp
-  const stampW = 32;
-  const stampH = stampW * (140 / 88);
-  const stampX = W - M - stampW - 12;
-  const stampY = y - 4;
-  const sigW = 36;
-  const sigH = sigW * (80 / 103);
-  const sigX = stampX + (stampW - sigW) / 2;
-  const sigY = stampY + (stampH - sigH) / 2;
-  try { doc.addImage(sharpStamp, "PNG", stampX, stampY, stampW, stampH); } catch(e){}
-  try { doc.addImage(sharpSig,   "PNG", sigX,   sigY,   sigW,   sigH); } catch(e){}
+  // Stamp + Signature composite block
+  const authX = W - M - mergedAuth.w - 10;
+  const authY = y - 3;
+  try { doc.addImage(mergedAuth.b64, "JPEG", authX, authY, mergedAuth.w, mergedAuth.h); } catch(e){}
   y += 36;
   doc.setDrawColor(...AC); doc.setLineWidth(0.4); doc.line(W-M-60,y,W-M,y); y+=5;
   doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...DK); doc.text(company.s_sign||"Mohit Sharma",W-M,y,{align:"right"}); y+=5;
