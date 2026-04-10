@@ -16,12 +16,6 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
   const gstAmt = totSub * 0.18;
   const grand = totSub + gstAmt;
 
-  const checkPage = (requiredSpace, drawHeaderFn = null) => {
-    if (y > H - requiredSpace) {
-      addNewPage();
-      if (drawHeaderFn) drawHeaderFn();
-    }
-  };
 
   // ── PROCESS & UPSCALE IMAGES FOR CRISP PDF RENDERING ──
   const processImage = async (base64Str, options = {}) => {
