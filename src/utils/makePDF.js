@@ -74,6 +74,7 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
       
       resolve({ b64: cvs.toDataURL("image/jpeg", 0.95), w: width/scale, h: height/scale });
     };
+    sImg.onload = check; sigImg.onload = check;
     sImg.src = STAMP_B64; sigImg.src = SIG_B64;
   });
 
