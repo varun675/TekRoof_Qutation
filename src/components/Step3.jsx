@@ -48,11 +48,11 @@ function MobileItemCard({ item, idx, onChange, onRemove }) {
         <button onClick={() => onRemove(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.danger, fontSize: 16, fontWeight: 700 }}>✕</button>
       </div>
       <Field label="Description"><Inp value={item.desc || ""} onChange={e => onChange(idx, "desc", e.target.value)} placeholder="Description" /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
         <Field label="Qty"><Inp type="number" min="0" value={item.qty || ""} onChange={e => onChange(idx, "qty", e.target.value)} placeholder="0" /></Field>
         <Field label="Unit"><Inp value={item.unit || "SQM"} onChange={e => onChange(idx, "unit", e.target.value)} /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
         <Field label="Rate (₹)"><Inp type="number" min="0" step="0.01" value={item.rate || ""} onChange={e => onChange(idx, "rate", e.target.value)} placeholder="0.00" /></Field>
         <Field label="Amount (₹)"><div style={{ padding: "10px 13px", background: "#f0ede8", borderRadius: 9, fontSize: 14, fontWeight: 700, color: C.accent }}>₹{fmt(item.amount)}</div></Field>
       </div>
@@ -142,11 +142,11 @@ export default function Step3({ items, setItems, terms, setTerms, activeNotes, t
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
           <Field label="Freight"><Sel {...f("freight")}>{FREIGHT_OPTIONS.map(o => <option key={o}>{o}</option>)}</Sel></Field>
           <Field label="Freight Destination"><Inp {...f("freightDest")} placeholder="e.g. Firozabad Site" /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
           <Field label="Delivery Timeline"><Inp {...f("delivery")} placeholder="e.g. Within 2 weeks" /></Field>
           <Field label="Payment Terms">
             <Sel {...f("payment")}>{PAY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</Sel>

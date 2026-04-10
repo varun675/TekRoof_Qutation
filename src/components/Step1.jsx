@@ -16,36 +16,36 @@ export default function Step1({ data, set, errors }) {
       </div>
 
       <Card icon="🏭" title="Company Details" sub="Pre-filled — edit if needed">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
           <Field label="Company Name" req err={errors.s_company}><Inp {...f("s_company")} err={errors.s_company} /></Field>
           <Field label="CIN"><Inp {...f("s_cin")} /></Field>
         </div>
         <Field label="Address"><Inp {...f("s_address")} /></Field>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
           <Field label="GSTIN"><Inp {...f("s_gstin")} /></Field>
           <Field label="Authorized Signatory"><Inp {...f("s_sign")} /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
           <Field label="Phone 1"><Inp {...f("s_phone1")} /></Field>
           <Field label="Phone 2"><Inp {...f("s_phone2")} /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
           <Field label="Website"><Inp {...f("s_web")} /></Field>
           <Field label="Email"><Inp {...f("s_email")} type="email" /></Field>
         </div>
 
         <SecLabel>Bank Details</SecLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
           <Field label="Account Name"><Inp {...f("b_name")} /></Field>
           <Field label="Account Number"><Inp {...f("b_acc")} /></Field>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
+        <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>
           <Field label="IFSC"><Inp {...f("b_ifsc")} /></Field>
           <Field label="Bank Name & Branch"><Inp {...f("b_bank")} /></Field>
         </div>
 
         <SecLabel>Quotation Reference</SecLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 13 }}>
+        <div className="g3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 13 }}>
           <Field label="Quotation No." req hint="e.g. TSPL/26-27/03" err={errors.q_number}><Inp {...f("q_number")} placeholder="TSPL/26-27/03" err={errors.q_number} /></Field>
           <Field label="Date" req err={errors.q_date}><Inp {...f("q_date")} type="date" err={errors.q_date} /></Field>
           <Field label="Validity"><Inp {...f("q_validity")} placeholder="07 Days" /></Field>

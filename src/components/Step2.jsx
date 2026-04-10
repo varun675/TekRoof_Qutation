@@ -6,16 +6,16 @@ export default function Step2({ data, setClient, setCompany, errors }) {
   const f = (k) => ({ value: data[k] || "", onChange: (e) => setClient(k, e.target.value) });
   return (
     <Card icon="👤" title="Client Details" sub="Who is this quotation for?">
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
+      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
         <Field label="Contact Person" req err={errors.c_attn}><Inp {...f("c_attn")} placeholder="Mr. Jitender Singh" err={errors.c_attn} /></Field>
         <Field label="Company Name" req err={errors.c_company}><Inp {...f("c_company")} placeholder="Rattan Singh Builders Pvt. Ltd." err={errors.c_company} /></Field>
       </div>
       <Field label="Address / City" req err={errors.c_address}><Inp {...f("c_address")} placeholder="New Delhi" err={errors.c_address} /></Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
+      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
         <Field label="Phone"><Inp {...f("c_phone")} placeholder="+91 9XXXXXXXXX" /></Field>
         <Field label="Email"><Inp {...f("c_email")} type="email" placeholder="client@company.com" /></Field>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
+      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginTop: 13 }}>
         <Field label="GSTIN"><Inp {...f("c_gstin")} placeholder="Client GSTIN (if any)" /></Field>
         <Field label="Buyer's Ref / PO No."><Inp {...f("c_ref")} placeholder="If any" /></Field>
       </div>

@@ -82,5 +82,5 @@ export function Chip({ active, onClick, children }) {
   );
 }
 
-export function G2({ children }) { return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>{children}</div>; }
-export function G3({ children }) { return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 13 }}>{children}</div>; }
+export function G2({ children }) { return <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13 }}>{children}</div>; }
+export function G3({ children }) { return <div className="g3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 13 }}>{children}</div>; }
