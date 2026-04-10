@@ -16,23 +16,43 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
   const gstAmt = totSub * 0.18;
   const grand = totSub + gstAmt;
 
-  // ── INVERT LOGO TO WHITE ──
-  const whiteLogoB64 = await new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      const cvs = document.createElement("canvas");
-      cvs.width = img.width; cvs.height = img.height;
-      const ctx = cvs.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, img.width, img.height);
-      for (let i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i] = 255; imgData.data[i+1] = 255; imgData.data[i+2] = 255;
-      }
-      ctx.putImageData(imgData, 0, 0);
-      resolve(cvs.toDataURL("image/png"));
-    };
-    img.src = LOGO_B64;
-  });
+  const checkPage = (requiredSpace, drawHeaderFn = null) => {
+    if (y > H - requiredSpace) {
+      addNewPage();
+      if (drawHeaderFn) drawHeaderFn();
+    }
+  };
+
+  // ── PROCESS & UPSCALE IMAGES FOR CRISP PDF RENDERING ──
+  const processImage = async (base64Str, options = {}) => {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = options.scale || 1;
+        const cvs = document.createElement("canvas");
+        cvs.width = img.width * scale; 
+        cvs.height = img.height * scale;
+        const ctx = cvs.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+        
+        if (options.invertWhite) {
+          const imgData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+          for (let i = 0; i < imgData.data.length; i += 4) {
+            imgData.data[i] = 255; imgData.data[i+1] = 255; imgData.data[i+2] = 255;
+          }
+          ctx.putImageData(imgData, 0, 0);
+        }
+        resolve(cvs.toDataURL("image/png"));
+      };
+      img.src = base64Str;
+    });
+  };
+
+  const whiteLogoB64 = await processImage(LOGO_B64, { scale: 3, invertWhite: true });
+  const sharpStamp = await processImage(STAMP_B64, { scale: 5 });
+  const sharpSig = await processImage(SIG_B64, { scale: 5 });
 
   // ── HEADER ──
   doc.setFillColor(...PR); doc.rect(0, 0, W, 44, "F");
@@ -198,8 +218,8 @@ export async function makePDF({ company, client, items, terms, gstMode, activeNo
   const sigH = sigW * (80 / 103);
   const sigX = stampX + (stampW - sigW) / 2;
   const sigY = stampY + (stampH - sigH) / 2;
-  try { doc.addImage(STAMP_B64, "PNG", stampX, stampY, stampW, stampH); } catch(e){}
-  try { doc.addImage(SIG_B64,   "PNG", sigX,   sigY,   sigW,   sigH); } catch(e){}
+  try { doc.addImage(sharpStamp, "PNG", stampX, stampY, stampW, stampH); } catch(e){}
+  try { doc.addImage(sharpSig,   "PNG", sigX,   sigY,   sigW,   sigH); } catch(e){}
   y += 36;
   doc.setDrawColor(...AC); doc.setLineWidth(0.4); doc.line(W-M-60,y,W-M,y); y+=5;
   doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...DK); doc.text(company.s_sign||"Mohit Sharma",W-M,y,{align:"right"}); y+=5;
