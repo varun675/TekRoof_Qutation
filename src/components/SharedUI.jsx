@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { C } from '../constants';
 
 const inputCss = (err) => ({
-  width: "100%", padding: "10px 13px",
+  width: "100%", padding: "11px 13px",
   border: `1.5px solid ${err ? C.danger : C.border}`,
-  borderRadius: 9, fontFamily: "inherit", fontSize: 14,
+  borderRadius: 9, fontFamily: "inherit", fontSize: 15,
   color: C.text, background: C.surface, outline: "none",
   boxSizing: "border-box", transition: "border-color 0.2s",
+  minHeight: 44,
 });
 
 export function Inp({ err, style, ...props }) {
@@ -35,7 +36,7 @@ export function Txt({ style, ...props }) {
   const [focus, setFocus] = useState(false);
   return (
     <textarea
-      style={{ ...inputCss(false), borderColor: focus ? C.accent : C.border, resize: "vertical", minHeight: 76, ...style }}
+      style={{ ...inputCss(false), borderColor: focus ? C.accent : C.border, resize: "vertical", minHeight: 80, lineHeight: 1.5, ...style }}
       onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
       {...props}
     />
@@ -58,14 +59,14 @@ export function Field({ label, req, hint, err, children, style }) {
 export function Card({ icon, title, sub, children }) {
   return (
     <div style={{ background: C.surface, borderRadius: 14, border: `1px solid ${C.border}`, boxShadow: "0 4px 24px rgba(26,26,46,0.07)", marginBottom: 16, overflow: "hidden" }}>
-      <div style={{ padding: "15px 22px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg,${C.primary},#2d2d5e)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>{icon}</div>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 600 }}>{title}</div>
-          {sub && <div style={{ fontSize: 12, color: C.text3 }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 12, color: C.text3, lineHeight: 1.4 }}>{sub}</div>}
         </div>
       </div>
-      <div style={{ padding: "18px 22px" }}>{children}</div>
+      <div style={{ padding: "16px" }}>{children}</div>
     </div>
   );
 }
