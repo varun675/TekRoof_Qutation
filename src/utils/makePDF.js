@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { fmt, fmtDate } from '../constants';
 import { LOGO_B64, STAMP_B64, SIG_B64 } from '../constants/assets';
 
-const hasAmount = (i) => i.hasPricing !== false && parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
+const isPriced = (i) => parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
 const splitLines = (s) => (s || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
 export async function makePDF({ company, client, items, terms, gstMode }) {
@@ -14,12 +14,14 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   const fullSubject = company.subjectPrefix + (company.subjectDetail ? " " + company.subjectDetail : "");
   const freightStr = [terms.freight, terms.freightDest].filter(Boolean).join(" — ");
   const payText = terms.payment || "";
-  const visibleItems = items.filter(i => (i.desc && i.desc.trim()) || hasAmount(i));
-  const pricedItems = items.filter(hasAmount);
+  const showPricing = terms.showPricing !== false;
+  const hasAmount = (i) => showPricing && isPriced(i);
+  const visibleItems = items.filter(i => (i.desc && i.desc.trim()) || isPriced(i));
+  const pricedItems = showPricing ? items.filter(isPriced) : [];
   const totSub = pricedItems.reduce((s, i) => s + (i.amount || 0), 0);
   const gstAmt = totSub * 0.18;
   const grand = totSub + gstAmt;
-  const showTotals = terms.showTotals !== false && pricedItems.length > 0;
+  const showTotals = showPricing && terms.showTotals !== false && pricedItems.length > 0;
   const termLines = splitLines(terms.notesExtra);
   const specialLines = splitLines(terms.specialTerms);
 
@@ -137,7 +139,8 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   };
 
   // ── META ──
-  const metaArr = [["Quotation No.",company.q_number],["Date",fmtDate(company.q_date)],["Validity",company.q_validity||"—"],["GST","18% Exclusive"]];
+  const metaArr = [["Quotation No.",company.q_number],["Date",fmtDate(company.q_date)],["Validity",company.q_validity||"—"]];
+  if (showPricing) metaArr.push(["GST","18% Exclusive"]);
   if (client.c_ref) metaArr.push(["Buyer Ref.",client.c_ref]);
   const mW = (W-M*2)/Math.min(metaArr.length,4);
   metaArr.slice(0,4).forEach(([l,v],i) => {
@@ -149,17 +152,27 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   // ── ITEMS TABLE (multi-line description support) ──
   doc.setFontSize(7.5); doc.setFont("helvetica","bold"); doc.setTextColor(...GR);
   doc.text("DESCRIPTION OF GOODS / SERVICES", M, y+4); y += 7;
-  const cW = [8,78,14,14,22,30];
+
+  const tableW = W - M*2;
+  // When pricing is shown: [#, Desc, Qty, Unit, Rate, Amount]
+  // When pricing is hidden: [#, Desc]
+  const cW = showPricing
+    ? [8, tableW - (8+14+14+22+30), 14, 14, 22, 30]
+    : [8, tableW - 8];
+  const headers = showPricing
+    ? ["#","Description","Qty","Unit","Rate (Rs.)","Amount (Rs.)"]
+    : ["#","Description"];
 
   const drawTableHeader = () => {
-    doc.setFillColor(...PR); doc.rect(M, y, W-M*2, 8, "F");
+    doc.setFillColor(...PR); doc.rect(M, y, tableW, 8, "F");
     let cx = M;
-    ["#","Description","Qty","Unit","Rate (Rs.)","Amount (Rs.)"].forEach((h,i) => {
+    headers.forEach((h,i) => {
       doc.setFont("helvetica","bold"); doc.setFontSize(7); doc.setTextColor(...WH);
-      const al = i>=4?"right":i===0?"center":"left";
-      const xp = al==="right"?cx+cW[i]-2:al==="center"?cx+cW[i]/2:cx+2;
+      const al = showPricing ? (i>=4 ? "right" : i===0 ? "center" : "left") : (i===0 ? "center" : "left");
+      const xp = al==="right" ? cx+cW[i]-2 : al==="center" ? cx+cW[i]/2 : cx+2;
       doc.text(h, xp, y+5.5, {align:al}); cx+=cW[i];
-    }); y += 8;
+    });
+    y += 8;
   };
 
   drawTableHeader();
@@ -168,22 +181,23 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     const descLines = doc.splitTextToSize(item.desc || "", cW[1]-4);
     const rowH = Math.max(8, descLines.length * 4.2 + 4);
     checkPage(rowH + 12, drawTableHeader);
-    doc.setFillColor(...(idx%2===0?WH:LG)); doc.rect(M, y, W-M*2, rowH, "F");
+    doc.setFillColor(...(idx%2===0?WH:LG)); doc.rect(M, y, tableW, rowH, "F");
     doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
     // #
     doc.text(String(idx+1), M + cW[0]/2, y+5.5, {align:"center"});
     // Description (multi-line)
     doc.text(descLines, M + cW[0] + 2, y + 5);
-    // Qty / Unit / Rate / Amount
-    const qtyTxt = item.qty || "—";
-    const unitTxt = item.unit || "—";
-    const rateTxt = hasAmount(item) ? fmt(parseFloat(item.rate) || 0) : "—";
-    const amtTxt = hasAmount(item) ? fmt(item.amount) : "—";
-    let cx = M + cW[0] + cW[1];
-    doc.text(qtyTxt, cx + cW[2]/2, y+5.5, {align:"center"}); cx += cW[2];
-    doc.text(unitTxt, cx + cW[3]/2, y+5.5, {align:"center"}); cx += cW[3];
-    doc.text(rateTxt, cx + cW[4] - 2, y+5.5, {align:"right"}); cx += cW[4];
-    doc.text(amtTxt, cx + cW[5] - 2, y+5.5, {align:"right"});
+    if (showPricing) {
+      const qtyTxt = item.qty || "—";
+      const unitTxt = item.unit || "—";
+      const rateTxt = hasAmount(item) ? fmt(parseFloat(item.rate) || 0) : "—";
+      const amtTxt = hasAmount(item) ? fmt(item.amount) : "—";
+      let cx = M + cW[0] + cW[1];
+      doc.text(qtyTxt, cx + cW[2]/2, y+5.5, {align:"center"}); cx += cW[2];
+      doc.text(unitTxt, cx + cW[3]/2, y+5.5, {align:"center"}); cx += cW[3];
+      doc.text(rateTxt, cx + cW[4] - 2, y+5.5, {align:"right"}); cx += cW[4];
+      doc.text(amtTxt, cx + cW[5] - 2, y+5.5, {align:"right"});
+    }
     doc.setDrawColor(...LG); doc.line(M, y+rowH, W-M, y+rowH);
     y += rowH;
   });
@@ -207,7 +221,10 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   // ── COMMERCIAL TERMS ──
   checkPage(60);
   doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...GR); doc.text("COMMERCIAL TERMS",M,y); y+=5;
-  const termsArr=[["GST","18% Exclusive"],["Freight",freightStr || "—"],["Delivery",terms.delivery || "—"],["Validity",company.q_validity || "—"],["Payment",payText || "—"]];
+  const termsArr = [];
+  if (showPricing) termsArr.push(["GST","18% Exclusive"]);
+  termsArr.push(["Freight",freightStr || "—"], ["Delivery",terms.delivery || "—"], ["Validity",company.q_validity || "—"]);
+  if (payText) termsArr.push(["Payment", payText]);
   const tC=3, tW2=(W-M*2)/tC;
   const rowsCount = Math.ceil(termsArr.length / tC);
   // Compute per-row height (allow 2 lines of wrapped payment text)

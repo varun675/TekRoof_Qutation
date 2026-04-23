@@ -16,7 +16,7 @@ export default function App() {
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const [items, setItems] = useState([
-    { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429, hasPricing: true },
+    { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429 },
   ]);
 
   const [focusedInput, setFocusedInput] = useState(false);
@@ -82,6 +82,7 @@ export default function App() {
     payment: "You will release 100% advance payment before dispatch as per bank details.",
     notesExtra: DEFAULT_TERMS,
     specialTerms: "",
+    showPricing: true,
     showTotals: true,
   });
 

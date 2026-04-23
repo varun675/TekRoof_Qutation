@@ -3,9 +3,9 @@ import { C, fmt } from '../constants';
 import { STAMP_B64, SIG_B64 } from '../constants/assets';
 import { Card, Field, Inp, SecLabel, Txt } from './SharedUI';
 
-const hasPricing = (item) => item.hasPricing !== false && parseFloat(item.qty) > 0 && parseFloat(item.rate) > 0;
+const isPriced = (item) => parseFloat(item.qty) > 0 && parseFloat(item.rate) > 0;
 
-function firstLine(text, maxChars = 54) {
+function firstLine(text, maxChars = 60) {
   const t = (text || "").trim();
   if (!t) return "";
   const first = t.split(/\r?\n/)[0];
@@ -13,9 +13,13 @@ function firstLine(text, maxChars = 54) {
 }
 
 // ── MOBILE ACCORDION ITEM ──
-function MobileAccordionItem({ item, idx, total, expanded, onExpand, onChange, onRemove, onDuplicate, onMove }) {
-  const priced = hasPricing(item);
-  const summary = priced ? `${item.qty} ${item.unit || ""} × ₹${fmt(parseFloat(item.rate) || 0)}` : "Description only";
+function MobileAccordionItem({ item, idx, total, expanded, showPricing, onExpand, onChange, onRemove, onDuplicate, onMove }) {
+  const priced = showPricing && isPriced(item);
+  const summary = !showPricing
+    ? "Description only"
+    : priced
+      ? `${item.qty} ${item.unit || ""} × ₹${fmt(parseFloat(item.rate) || 0)}`
+      : "No pricing yet";
 
   if (!expanded) {
     return (
@@ -26,17 +30,19 @@ function MobileAccordionItem({ item, idx, total, expanded, onExpand, onChange, o
           background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
           padding: "12px 14px", marginBottom: 8, fontFamily: "inherit", color: "inherit",
         }}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: showPricing ? 4 : 0 }}>
           <span style={{ display: "inline-flex", flexShrink: 0, width: 22, height: 22, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: C.surface2, fontSize: 12, fontWeight: 700, color: C.text2 }}>{idx + 1}</span>
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: C.text, lineHeight: 1.4 }}>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: C.text, lineHeight: 1.45, whiteSpace: "pre-wrap" }}>
             {firstLine(item.desc) || <span style={{ color: C.text3, fontStyle: "italic" }}>Empty description — tap to edit</span>}
           </span>
           <span style={{ fontSize: 18, color: C.text3, marginTop: -2 }}>⌄</span>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, paddingLeft: 32, fontSize: 12 }}>
-          <span style={{ color: priced ? C.text3 : C.text3, fontStyle: priced ? "normal" : "italic" }}>{summary}</span>
-          <span style={{ fontWeight: 700, color: priced ? C.accent : C.text3 }}>{priced ? `₹${fmt(item.amount)}` : ""}</span>
-        </div>
+        {showPricing && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, paddingLeft: 32, fontSize: 12 }}>
+            <span style={{ color: C.text3, fontStyle: priced ? "normal" : "italic" }}>{summary}</span>
+            <span style={{ fontWeight: 700, color: priced ? C.accent : C.text3 }}>{priced ? `₹${fmt(item.amount)}` : ""}</span>
+          </div>
+        )}
       </button>
     );
   }
@@ -81,22 +87,12 @@ function MobileAccordionItem({ item, idx, total, expanded, onExpand, onChange, o
         <Txt
           value={item.desc || ""}
           onChange={(e) => onChange("desc", e.target.value)}
-          placeholder="e.g.&#10;Supply of profile sheet 0.50 mm&#10;Colour: Blue, Make: AM/NS&#10;Length: 3000 mm"
-          style={{ minHeight: 120 }}
+          placeholder={"e.g.\nSupply of profile sheet 0.50 mm\nColour: Blue, Make: AM/NS\nLength: 3000 mm"}
+          style={{ minHeight: 140 }}
         />
       </Field>
 
-      <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "10px 12px", background: C.surface2, borderRadius: 8, cursor: "pointer", fontSize: 13, color: C.text2 }}>
-        <input
-          type="checkbox"
-          checked={!!item.hasPricing}
-          onChange={(e) => onChange("hasPricing", e.target.checked)}
-          style={{ accentColor: C.accent, width: 17, height: 17, flexShrink: 0 }}
-        />
-        <span>Add <strong style={{ color: C.text }}>Qty / Unit / Rate</strong> per unit</span>
-      </label>
-
-      {item.hasPricing && (
+      {showPricing && (
         <>
           <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
             <Field label="Qty"><Inp type="number" min="0" value={item.qty || ""} onChange={(e) => onChange("qty", e.target.value)} placeholder="0" /></Field>
@@ -117,42 +113,27 @@ function MobileAccordionItem({ item, idx, total, expanded, onExpand, onChange, o
 }
 
 // ── DESKTOP TABLE ROW ──
-function DesktopItemRow({ item, idx, total, onChange, onRemove, onDuplicate, onMove }) {
+function DesktopItemRow({ item, idx, total, showPricing, onChange, onRemove, onDuplicate, onMove }) {
   const cellStyle = { padding: "8px 6px", borderBottom: `1px solid ${C.surface2}`, verticalAlign: "top" };
-  const inpBase = { width: "100%", border: "1px solid transparent", borderRadius: 6, padding: "7px 8px", fontSize: 13, fontFamily: "inherit", background: "transparent", outline: "none" };
+  const inpBase = { width: "100%", border: "1px solid transparent", borderRadius: 6, padding: "8px 10px", fontSize: 13, fontFamily: "inherit", background: "transparent", outline: "none" };
   const onF = (e) => (e.target.style.borderColor = C.accent);
   const onB = (e) => (e.target.style.borderColor = "transparent");
-  const priced = hasPricing(item);
-  const showPricing = !!item.hasPricing;
-
-  const toggleLinkStyle = {
-    display: "inline-flex", alignItems: "center", gap: 4,
-    background: "none", border: "none", padding: "4px 2px", margin: "4px 0 0",
-    cursor: "pointer", color: C.text3, fontSize: 11, fontFamily: "inherit",
-  };
+  const priced = showPricing && isPriced(item);
 
   return (
     <tr>
       <td style={{ ...cellStyle, textAlign: "center", fontSize: 12, color: C.text3, width: 28, paddingTop: 14 }}>{idx + 1}</td>
       <td style={cellStyle}>
         <textarea
-          rows={Math.max(2, (item.desc || "").split("\n").length)}
+          rows={Math.max(3, (item.desc || "").split("\n").length)}
           placeholder="Description (press Enter for new line / bullet)"
           value={item.desc || ""}
           onChange={(e) => onChange("desc", e.target.value)}
           onFocus={onF} onBlur={onB}
-          style={{ ...inpBase, resize: "vertical", minHeight: 56, lineHeight: 1.5 }}
+          style={{ ...inpBase, resize: "vertical", minHeight: 70, lineHeight: 1.55 }}
         />
-        <button
-          type="button"
-          onClick={() => onChange("hasPricing", !showPricing)}
-          style={{ ...toggleLinkStyle, color: showPricing ? C.text3 : C.accent, fontWeight: showPricing ? 400 : 600 }}
-          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
-          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>
-          {showPricing ? "× Remove Qty / Rate" : "＋ Add Qty / Unit / Rate"}
-        </button>
       </td>
-      {showPricing ? (
+      {showPricing && (
         <>
           <td style={{ ...cellStyle, width: 72 }}>
             <input type="number" min="0" value={item.qty || ""}
@@ -172,10 +153,6 @@ function DesktopItemRow({ item, idx, total, onChange, onRemove, onDuplicate, onM
             {priced ? "₹" + fmt(item.amount) : "—"}
           </td>
         </>
-      ) : (
-        <td colSpan={4} style={{ ...cellStyle, textAlign: "center", color: C.text3, fontStyle: "italic", fontSize: 12 }}>
-          Description only — no pricing
-        </td>
       )}
       <td style={{ ...cellStyle, width: 96 }}>
         <div style={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
@@ -205,7 +182,8 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const pricedItems = items.filter(hasPricing);
+  const showPricing = terms.showPricing !== false;
+  const pricedItems = showPricing ? items.filter(isPriced) : [];
   const totSub = pricedItems.reduce((s, i) => s + (i.amount || 0), 0);
   const gstAmt = totSub * 0.18;
   const anyPriced = pricedItems.length > 0;
@@ -213,21 +191,18 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
   const updateItem = useCallback((id, key, val) => {
     setItems((prev) => prev.map((it) => {
       if (it.id !== id) return it;
-      let updated = { ...it, [key]: val };
-      if (key === "hasPricing" && val === false) {
-        updated = { ...updated, qty: "", unit: "", rate: "", amount: 0 };
-      } else if (key === "qty" || key === "rate") {
+      const updated = { ...it, [key]: val };
+      if (key === "qty" || key === "rate") {
         const q = parseFloat(key === "qty" ? val : updated.qty) || 0;
         const r = parseFloat(key === "rate" ? val : updated.rate) || 0;
         updated.amount = q * r;
-        if ((q > 0 || r > 0) && !updated.hasPricing) updated.hasPricing = true;
       }
       return updated;
     }));
   }, [setItems]);
 
   const addItem = () => {
-    const newItem = { id: Date.now() + Math.random(), desc: "", qty: "", unit: "", rate: "", amount: 0, hasPricing: false };
+    const newItem = { id: Date.now() + Math.random(), desc: "", qty: "", unit: "", rate: "", amount: 0 };
     setItems((prev) => [...prev, newItem]);
     setExpandedId(newItem.id);
     setTimeout(() => {
@@ -261,25 +236,46 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
     });
   };
 
+  const togglePricing = (on) => setTerms("showPricing", !!on);
+
   const f = (k) => ({ value: terms[k] || "", onChange: (e) => setTerms(k, e.target.value) });
+
+  const headerCells = showPricing
+    ? ["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)", "Actions"]
+    : ["#", "Description", "Actions"];
 
   return (
     <>
-      <Card icon="📦" title="Items / Description" sub={isMobile ? "Tap a row to edit. Qty / Unit / Rate are optional." : "Press Enter inside Description for a new line. Qty & Rate are optional."}>
+      <Card icon="📦" title="Items / Description" sub={showPricing ? "Qty / Unit / Rate applies to every item. Uncheck below to make all items description-only." : "All items are description-only. Check below to enable pricing for every item."}>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, padding: "12px 14px", background: showPricing ? "#fdf8e6" : C.surface2, border: `1.5px solid ${showPricing ? C.accent : C.border}`, borderRadius: 10, cursor: "pointer", fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={showPricing}
+            onChange={(e) => togglePricing(e.target.checked)}
+            style={{ accentColor: C.accent, width: 18, height: 18, flexShrink: 0 }}
+          />
+          <span style={{ color: C.text, flex: 1 }}>
+            <strong>Include Qty / Unit / Rate</strong> for all items
+            <span style={{ display: "block", fontSize: 12, color: C.text3, marginTop: 2 }}>
+              {showPricing ? "Pricing columns visible on every item." : "Only description shown; no pricing, no totals."}
+            </span>
+          </span>
+        </label>
+
         {!isMobile ? (
           <div style={{ overflowX: "auto", margin: "0 -4px" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: showPricing ? 620 : 360 }}>
               <thead>
                 <tr style={{ background: C.surface2 }}>
-                  {["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)", "Actions"].map((h, i) => (
-                    <th key={i} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `2px solid ${C.border}`, textAlign: i >= 4 && i !== 6 ? "right" : i === 0 || i === 6 ? "center" : "left", whiteSpace: "nowrap" }}>{h}</th>
+                  {headerCells.map((h, i) => (
+                    <th key={i} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `2px solid ${C.border}`, textAlign: showPricing ? (i >= 4 && i !== 6 ? "right" : (i === 0 || i === 6) ? "center" : "left") : (i === 0 ? "center" : i === 2 ? "center" : "left"), whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
                   <DesktopItemRow
-                    key={item.id} item={item} idx={idx} total={items.length}
+                    key={item.id} item={item} idx={idx} total={items.length} showPricing={showPricing}
                     onChange={(key, val) => updateItem(item.id, key, val)}
                     onRemove={() => removeItem(item.id)}
                     onDuplicate={() => duplicateItem(item.id)}
@@ -293,7 +289,7 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
           <div>
             {items.map((item, idx) => (
               <MobileAccordionItem
-                key={item.id} item={item} idx={idx} total={items.length}
+                key={item.id} item={item} idx={idx} total={items.length} showPricing={showPricing}
                 expanded={expandedId === item.id}
                 onExpand={() => setExpandedId(expandedId === item.id ? null : item.id)}
                 onChange={(key, val) => updateItem(item.id, key, val)}
@@ -314,13 +310,15 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
           ＋ Add Item / Description
         </button>
 
-        <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 12px", background: C.surface2, borderRadius: 8, cursor: "pointer", fontSize: 13, color: C.text2 }}>
-          <input type="checkbox" checked={!!terms.showTotals} onChange={(e) => setTerms("showTotals", e.target.checked)}
-            style={{ accentColor: C.accent, width: 17, height: 17 }} />
-          <span>Show subtotal, GST and Grand Total on quotation</span>
-        </label>
+        {showPricing && (
+          <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 12px", background: C.surface2, borderRadius: 8, cursor: "pointer", fontSize: 13, color: C.text2 }}>
+            <input type="checkbox" checked={!!terms.showTotals} onChange={(e) => setTerms("showTotals", e.target.checked)}
+              style={{ accentColor: C.accent, width: 17, height: 17 }} />
+            <span>Show subtotal, GST and Grand Total on quotation</span>
+          </label>
+        )}
 
-        {terms.showTotals && anyPriced && (
+        {showPricing && terms.showTotals && anyPriced && (
           <div style={{ background: C.surface2, borderRadius: 10, padding: "14px 18px", marginTop: 14, border: `1px solid ${C.border}` }}>
             {(gstMode === "intra"
               ? [["Subtotal (Ex-GST)", totSub], ["CGST @ 9%", gstAmt / 2], ["SGST @ 9%", gstAmt / 2]]
@@ -338,15 +336,19 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
       </Card>
 
       <Card icon="⚙️" title="Commercial Terms" sub="All fields below are free-text editable">
-        <SecLabel>GST Type</SecLabel>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-          {[["intra", "Intra-State (CGST+SGST 18%)"], ["inter", "Inter-State (IGST 18%)"]].map(([v, l]) => (
-            <button key={v} onClick={() => setGstMode(v)}
-              style={{ flex: "1 1 160px", padding: "10px 8px", border: `1.5px solid ${gstMode === v ? C.primary : C.border}`, borderRadius: 8, background: gstMode === v ? C.primary : C.surface, color: gstMode === v ? "#fff" : C.text2, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", minHeight: 44 }}>
-              {l}
-            </button>
-          ))}
-        </div>
+        {showPricing && (
+          <>
+            <SecLabel>GST Type</SecLabel>
+            <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              {[["intra", "Intra-State (CGST+SGST 18%)"], ["inter", "Inter-State (IGST 18%)"]].map(([v, l]) => (
+                <button key={v} onClick={() => setGstMode(v)}
+                  style={{ flex: "1 1 160px", padding: "10px 8px", border: `1.5px solid ${gstMode === v ? C.primary : C.border}`, borderRadius: 8, background: gstMode === v ? C.primary : C.surface, color: gstMode === v ? "#fff" : C.text2, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", minHeight: 44 }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 13, marginBottom: 13 }}>
           <Field label="Freight" hint="e.g. FOR Site / Ex-Works / To Pay / Inclusive">

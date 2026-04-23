@@ -2,16 +2,18 @@ import React from 'react';
 import { C, fmt, fmtDate } from '../constants';
 import { LOGO_B64, STAMP_B64, SIG_B64 } from '../constants/assets';
 
-const hasAmount = (i) => i.hasPricing !== false && parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
+const isPriced = (i) => parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
 const splitLines = (s) => (s || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
 export default function Step4({ company, client, items, terms, gstMode, onEdit, onDownload }) {
   const fullSubject = company.subjectPrefix + (company.subjectDetail ? " " + company.subjectDetail : "");
-  const pricedItems = items.filter(hasAmount);
+  const showPricing = terms.showPricing !== false;
+  const pricedItems = showPricing ? items.filter(isPriced) : [];
   const totSub = pricedItems.reduce((s, i) => s + (i.amount || 0), 0);
   const gstAmt = totSub * 0.18;
   const grand = totSub + gstAmt;
-  const showTotals = terms.showTotals !== false && pricedItems.length > 0;
+  const showTotals = showPricing && terms.showTotals !== false && pricedItems.length > 0;
+  const hasAmount = (i) => showPricing && isPriced(i);
 
   const freightStr = [terms.freight, terms.freightDest].filter(Boolean).join(" — ");
   const termLines = splitLines(terms.notesExtra);
@@ -19,7 +21,7 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
 
   const btnStyle = { padding: "10px 16px", border: `1.5px solid ${C.border}`, borderRadius: 9, background: C.surface, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", color: C.text2, minHeight: 42 };
 
-  const visibleItems = items.filter(i => (i.desc && i.desc.trim()) || hasAmount(i));
+  const visibleItems = items.filter(i => (i.desc && i.desc.trim()) || isPriced(i));
 
   return (
     <div>
@@ -69,7 +71,7 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))", gap: 8, marginBottom: 16 }}>
-            {[["Quotation No.", company.q_number], ["Date", fmtDate(company.q_date)], ["Validity", company.q_validity || "—"], ["GST", "18% Exclusive"], ...(client.c_ref ? [["Buyer Ref.", client.c_ref]] : [])].map(([l, v]) => (
+            {[["Quotation No.", company.q_number], ["Date", fmtDate(company.q_date)], ["Validity", company.q_validity || "—"], ...(showPricing ? [["GST", "18% Exclusive"]] : []), ...(client.c_ref ? [["Buyer Ref.", client.c_ref]] : [])].map(([l, v]) => (
               <div key={l} style={{ background: C.surface2, borderRadius: 8, padding: "9px 11px", border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 10, color: C.text3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>{l}</div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: C.text }}>{v || "—"}</div>
@@ -79,25 +81,29 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
 
           <div style={{ fontSize: 12, fontWeight: 700, color: C.text3, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Description of Goods / Services</div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 400 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: showPricing ? 400 : 280 }}>
               <thead>
                 <tr style={{ background: C.primary }}>
-                  {["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)"].map((h, i) => (
-                    <th key={i} style={{ padding: "9px 10px", color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: 600, textAlign: i >= 4 ? "right" : i === 0 ? "center" : "left", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>{h}</th>
+                  {(showPricing ? ["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)"] : ["#", "Description"]).map((h, i) => (
+                    <th key={i} style={{ padding: "9px 10px", color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: 600, textAlign: showPricing ? (i >= 4 ? "right" : i === 0 ? "center" : "left") : (i === 0 ? "center" : "left"), textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {visibleItems.map((item, idx) => (
                   <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : C.surface2, borderBottom: `1px solid ${C.border}`, verticalAlign: "top" }}>
-                    <td style={{ padding: "9px 10px", textAlign: "center", color: C.text3 }}>{idx + 1}</td>
+                    <td style={{ padding: "9px 10px", textAlign: "center", color: C.text3, width: showPricing ? undefined : 40 }}>{idx + 1}</td>
                     <td style={{ padding: "9px 10px", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{item.desc}</td>
-                    <td style={{ padding: "9px 10px", textAlign: "center" }}>{item.qty || "—"}</td>
-                    <td style={{ padding: "9px 10px", textAlign: "center" }}>{item.unit || "—"}</td>
-                    <td style={{ padding: "9px 10px", textAlign: "right" }}>{hasAmount(item) ? "₹" + fmt(parseFloat(item.rate) || 0) : "—"}</td>
-                    <td style={{ padding: "9px 10px", textAlign: "right", fontWeight: 700, color: hasAmount(item) ? C.accent : C.text3 }}>
-                      {hasAmount(item) ? "₹" + fmt(item.amount) : "—"}
-                    </td>
+                    {showPricing && (
+                      <>
+                        <td style={{ padding: "9px 10px", textAlign: "center" }}>{item.qty || "—"}</td>
+                        <td style={{ padding: "9px 10px", textAlign: "center" }}>{item.unit || "—"}</td>
+                        <td style={{ padding: "9px 10px", textAlign: "right" }}>{hasAmount(item) ? "₹" + fmt(parseFloat(item.rate) || 0) : "—"}</td>
+                        <td style={{ padding: "9px 10px", textAlign: "right", fontWeight: 700, color: hasAmount(item) ? C.accent : C.text3 }}>
+                          {hasAmount(item) ? "₹" + fmt(item.amount) : "—"}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -123,7 +129,11 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
           )}
 
           <div className="prev-terms" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16, marginTop: showTotals ? 0 : 18 }}>
-            {[["GST", "18% Exclusive"], ["Freight", freightStr], ["Delivery", terms.delivery], ["Validity", company.q_validity], ["Payment", terms.payment]].map(([l, v]) => (
+            {[
+              ...(showPricing ? [["GST", "18% Exclusive"]] : []),
+              ["Freight", freightStr], ["Delivery", terms.delivery], ["Validity", company.q_validity],
+              ...(terms.payment ? [["Payment", terms.payment]] : [])
+            ].map(([l, v]) => (
               <div key={l} style={{ background: C.surface2, borderRadius: 8, padding: "10px 12px", border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 10, color: C.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>{l}</div>
                 <div style={{ fontSize: 12, color: C.text, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{v || "—"}</div>
