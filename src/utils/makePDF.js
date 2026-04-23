@@ -221,25 +221,38 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   // ── COMMERCIAL TERMS ──
   checkPage(60);
   doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...GR); doc.text("COMMERCIAL TERMS",M,y); y+=5;
-  const termsArr = [];
-  if (showPricing) termsArr.push(["GST","18% Exclusive"]);
-  termsArr.push(["Freight",freightStr || "—"], ["Delivery",terms.delivery || "—"], ["Validity",company.q_validity || "—"]);
-  if (payText) termsArr.push(["Payment", payText]);
-  const tC=3, tW2=(W-M*2)/tC;
-  const rowsCount = Math.ceil(termsArr.length / tC);
-  // Compute per-row height (allow 2 lines of wrapped payment text)
-  let ty = y;
-  termsArr.forEach(([l,v],i) => {
-    const col=i%tC, row=Math.floor(i/tC);
-    const txWrap = doc.splitTextToSize(v || "—", tW2-6).slice(0,3);
+  const shortTerms = [];
+  if (showPricing) shortTerms.push(["GST","18% Exclusive"]);
+  shortTerms.push(["Freight", freightStr || "—"], ["Delivery", terms.delivery || "—"], ["Validity", company.q_validity || "—"]);
+
+  const tC = 3, tW2 = (W - M*2) / tC;
+  const rowsCount = Math.ceil(shortTerms.length / tC);
+  const ty = y;
+  shortTerms.forEach(([l,v], i) => {
+    const col = i % tC, row = Math.floor(i / tC);
+    const txWrap = doc.splitTextToSize(v || "—", tW2 - 6).slice(0, 2);
     const boxH = Math.max(11, 5 + txWrap.length * 3.8);
-    const tx = M+col*tW2, yy = ty + row*14;
+    const tx = M + col*tW2, yy = ty + row*14;
     doc.setFillColor(...LG); doc.roundedRect(tx, yy, tW2-2, boxH, 1, 1, "F");
     doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...GR); doc.text(l.toUpperCase(), tx+3, yy+4.5);
     doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...DK);
-    txWrap.forEach((line, li) => doc.text(line, tx+3, yy+8.5+li*3.8));
+    txWrap.forEach((line, li) => doc.text(line, tx+3, yy+8.5 + li*3.8));
   });
-  y += rowsCount * 14 + 4;
+  y += rowsCount * 14 + 2;
+
+  // Payment spans full width on its own row
+  if (payText) {
+    const payWrap = doc.splitTextToSize(payText, W - M*2 - 6);
+    const payH = Math.max(12, 5 + payWrap.length * 3.8);
+    checkPage(payH + 8);
+    doc.setFillColor(...LG); doc.roundedRect(M, y, W - M*2, payH, 1, 1, "F");
+    doc.setFontSize(7); doc.setFont("helvetica","bold"); doc.setTextColor(...GR); doc.text("PAYMENT", M+3, y+4.5);
+    doc.setFontSize(7.5); doc.setFont("helvetica","normal"); doc.setTextColor(...DK);
+    payWrap.forEach((line, li) => doc.text(line, M+3, y + 8.5 + li*3.8));
+    y += payH + 4;
+  } else {
+    y += 4;
+  }
 
   // ── BANK DETAILS ──
   checkPage(36);

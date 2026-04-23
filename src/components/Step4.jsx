@@ -128,11 +128,10 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
             </div>
           )}
 
-          <div className="prev-terms" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16, marginTop: showTotals ? 0 : 18 }}>
+          <div className="prev-terms" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: terms.payment ? 10 : 16, marginTop: showTotals ? 0 : 18 }}>
             {[
               ...(showPricing ? [["GST", "18% Exclusive"]] : []),
               ["Freight", freightStr], ["Delivery", terms.delivery], ["Validity", company.q_validity],
-              ...(terms.payment ? [["Payment", terms.payment]] : [])
             ].map(([l, v]) => (
               <div key={l} style={{ background: C.surface2, borderRadius: 8, padding: "10px 12px", border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 10, color: C.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 2 }}>{l}</div>
@@ -140,6 +139,12 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
               </div>
             ))}
           </div>
+          {terms.payment && (
+            <div style={{ background: C.surface2, borderRadius: 8, padding: "10px 14px", border: `1px solid ${C.border}`, marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: C.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>Payment</div>
+              <div style={{ fontSize: 12, color: C.text, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{terms.payment}</div>
+            </div>
+          )}
 
           <div style={{ background: C.surface2, borderRadius: 10, padding: "13px 15px", border: `1px solid ${C.border}`, marginBottom: 16 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: C.text3, letterSpacing: 1, marginBottom: 10 }}>Bank Details for Payment</div>
