@@ -123,6 +123,14 @@ function DesktopItemRow({ item, idx, total, onChange, onRemove, onDuplicate, onM
   const onF = (e) => (e.target.style.borderColor = C.accent);
   const onB = (e) => (e.target.style.borderColor = "transparent");
   const priced = hasPricing(item);
+  const showPricing = !!item.hasPricing;
+
+  const toggleLinkStyle = {
+    display: "inline-flex", alignItems: "center", gap: 4,
+    background: "none", border: "none", padding: "4px 2px", margin: "4px 0 0",
+    cursor: "pointer", color: C.text3, fontSize: 11, fontFamily: "inherit",
+  };
+
   return (
     <tr>
       <td style={{ ...cellStyle, textAlign: "center", fontSize: 12, color: C.text3, width: 28, paddingTop: 14 }}>{idx + 1}</td>
@@ -135,27 +143,40 @@ function DesktopItemRow({ item, idx, total, onChange, onRemove, onDuplicate, onM
           onFocus={onF} onBlur={onB}
           style={{ ...inpBase, resize: "vertical", minHeight: 56, lineHeight: 1.5 }}
         />
+        <button
+          type="button"
+          onClick={() => onChange("hasPricing", !showPricing)}
+          style={{ ...toggleLinkStyle, color: showPricing ? C.text3 : C.accent, fontWeight: showPricing ? 400 : 600 }}
+          onMouseEnter={(e) => (e.currentTarget.style.textDecoration = "underline")}
+          onMouseLeave={(e) => (e.currentTarget.style.textDecoration = "none")}>
+          {showPricing ? "× Remove Qty / Rate" : "＋ Add Qty / Unit / Rate"}
+        </button>
       </td>
-      <td style={{ ...cellStyle, width: 72 }}>
-        <input type="number" min="0" value={item.qty || ""}
-          onChange={(e) => onChange("qty", e.target.value)}
-          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
-          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
-      </td>
-      <td style={{ ...cellStyle, width: 70 }}>
-        <input type="text" value={item.unit || ""} onChange={(e) => onChange("unit", e.target.value)}
-          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
-          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
-      </td>
-      <td style={{ ...cellStyle, width: 96 }}>
-        <input type="number" min="0" step="0.01" value={item.rate || ""}
-          onChange={(e) => onChange("rate", e.target.value)}
-          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
-          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "right" }} />
-      </td>
-      <td style={{ ...cellStyle, width: 108, textAlign: "right", paddingRight: 10, fontWeight: 700, fontSize: 13, color: priced ? C.accent : C.text3, whiteSpace: "nowrap" }}>
-        {priced ? "₹" + fmt(item.amount) : "—"}
-      </td>
+      {showPricing ? (
+        <>
+          <td style={{ ...cellStyle, width: 72 }}>
+            <input type="number" min="0" value={item.qty || ""}
+              onChange={(e) => onChange("qty", e.target.value)}
+              onFocus={onF} onBlur={onB} placeholder="0" style={{ ...inpBase, textAlign: "center" }} />
+          </td>
+          <td style={{ ...cellStyle, width: 70 }}>
+            <input type="text" value={item.unit || ""} onChange={(e) => onChange("unit", e.target.value)}
+              onFocus={onF} onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
+          </td>
+          <td style={{ ...cellStyle, width: 96 }}>
+            <input type="number" min="0" step="0.01" value={item.rate || ""}
+              onChange={(e) => onChange("rate", e.target.value)}
+              onFocus={onF} onBlur={onB} placeholder="0.00" style={{ ...inpBase, textAlign: "right" }} />
+          </td>
+          <td style={{ ...cellStyle, width: 108, textAlign: "right", paddingRight: 10, fontWeight: 700, fontSize: 13, color: priced ? C.accent : C.text3, whiteSpace: "nowrap" }}>
+            {priced ? "₹" + fmt(item.amount) : "—"}
+          </td>
+        </>
+      ) : (
+        <td colSpan={4} style={{ ...cellStyle, textAlign: "center", color: C.text3, fontStyle: "italic", fontSize: 12 }}>
+          Description only — no pricing
+        </td>
+      )}
       <td style={{ ...cellStyle, width: 96 }}>
         <div style={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
           <button onClick={() => onMove(-1)} disabled={idx === 0} title="Move up"
