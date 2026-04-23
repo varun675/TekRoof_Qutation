@@ -264,11 +264,12 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     doc.setFont("helvetica","normal"); doc.setTextColor(...DK); doc.text(String(v || "—").substring(0,50), bx+22, by);
   }); y+=28;
 
-  // ── TERMS & CONDITIONS (on new page if content) ──
+  // ── TERMS & CONDITIONS (flow into remaining space; paginate only when needed) ──
   if (termLines.length || specialLines.length) {
-    addNewPage();
+    y += 4;
 
     if (termLines.length) {
+      checkPage(16); // room for header + first bullet
       doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...DK); doc.text("TERMS & CONDITIONS", M, y); y+=6;
       termLines.forEach(note => {
         const wrapped = doc.splitTextToSize(note, W-M*2-10);
@@ -281,7 +282,7 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     }
 
     if (specialLines.length) {
-      checkPage(14);
+      checkPage(18);
       doc.setFillColor(255, 249, 236); doc.roundedRect(M, y-2, W-M*2, 7, 1.5, 1.5, "F");
       doc.setDrawColor(...AC); doc.setLineWidth(0.4); doc.line(M, y-2, M, y+5); doc.setLineWidth(0.2);
       doc.setFontSize(8); doc.setFont("helvetica","bold"); doc.setTextColor(...DK); doc.text("SPECIAL TERMS & CONDITIONS", M+3, y+3); y+=10;
