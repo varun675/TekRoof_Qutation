@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import { fmt, fmtDate } from '../constants';
 import { LOGO_B64, STAMP_B64, SIG_B64 } from '../constants/assets';
 
-const hasAmount = (i) => parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
+const hasAmount = (i) => i.hasPricing !== false && parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
 const splitLines = (s) => (s || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
 export async function makePDF({ company, client, items, terms, gstMode }) {

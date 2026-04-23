@@ -1,43 +1,128 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { C, fmt } from '../constants';
 import { STAMP_B64, SIG_B64 } from '../constants/assets';
 import { Card, Field, Inp, SecLabel, Txt } from './SharedUI';
 
-function hasAmount(item) {
-  return parseFloat(item.qty) > 0 && parseFloat(item.rate) > 0;
+const hasPricing = (item) => item.hasPricing !== false && parseFloat(item.qty) > 0 && parseFloat(item.rate) > 0;
+
+function firstLine(text, maxChars = 54) {
+  const t = (text || "").trim();
+  if (!t) return "";
+  const first = t.split(/\r?\n/)[0];
+  return first.length > maxChars ? first.slice(0, maxChars - 1) + "…" : first;
 }
 
-function MobileItemCard({ item, idx, onChange, onRemove }) {
+// ── MOBILE ACCORDION ITEM ──
+function MobileAccordionItem({ item, idx, total, expanded, onExpand, onChange, onRemove, onDuplicate, onMove }) {
+  const priced = hasPricing(item);
+  const summary = priced ? `${item.qty} ${item.unit || ""} × ₹${fmt(parseFloat(item.rate) || 0)}` : "Description only";
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={onExpand}
+        style={{
+          display: "block", width: "100%", textAlign: "left", cursor: "pointer",
+          background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10,
+          padding: "12px 14px", marginBottom: 8, fontFamily: "inherit", color: "inherit",
+        }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
+          <span style={{ display: "inline-flex", flexShrink: 0, width: 22, height: 22, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: C.surface2, fontSize: 12, fontWeight: 700, color: C.text2 }}>{idx + 1}</span>
+          <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: C.text, lineHeight: 1.4 }}>
+            {firstLine(item.desc) || <span style={{ color: C.text3, fontStyle: "italic" }}>Empty description — tap to edit</span>}
+          </span>
+          <span style={{ fontSize: 18, color: C.text3, marginTop: -2 }}>⌄</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, paddingLeft: 32, fontSize: 12 }}>
+          <span style={{ color: priced ? C.text3 : C.text3, fontStyle: priced ? "normal" : "italic" }}>{summary}</span>
+          <span style={{ fontWeight: 700, color: priced ? C.accent : C.text3 }}>{priced ? `₹${fmt(item.amount)}` : ""}</span>
+        </div>
+      </button>
+    );
+  }
+
+  const actionBtn = (label, onClick, disabled = false, danger = false) => (
+    <button
+      onClick={onClick} disabled={disabled}
+      style={{
+        flex: "0 0 auto", padding: "8px 10px", minHeight: 38, borderRadius: 8,
+        border: `1px solid ${danger ? "#f3c9c4" : C.border}`,
+        background: danger ? "#fff5f3" : C.surface,
+        color: disabled ? C.text3 : danger ? C.danger : C.text2,
+        fontSize: 12, fontWeight: 500, cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1, fontFamily: "inherit",
+      }}>
+      {label}
+    </button>
+  );
+
   return (
-    <div style={{ border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", marginBottom: 10, background: C.surface2 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: C.text3 }}>Item {idx + 1}</span>
-        <button onClick={() => onRemove(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.danger, fontSize: 18, fontWeight: 700, padding: "6px 10px", minHeight: 36 }}>✕</button>
+    <div style={{
+      border: `1.5px solid ${C.accent}`, borderRadius: 12, padding: 14, marginBottom: 10,
+      background: C.surface, boxShadow: "0 4px 14px rgba(200,169,81,0.12)",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ display: "inline-flex", width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: "50%", background: C.accent, color: C.primary, fontSize: 12, fontWeight: 700 }}>{idx + 1}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>Item {idx + 1}</span>
+        </div>
+        <button onClick={onExpand} style={{ background: "none", border: "none", fontSize: 18, color: C.text3, cursor: "pointer", padding: "4px 8px" }}>⌃</button>
       </div>
-      <Field label="Description (one point per line)" hint="Press Enter to add a new bullet point">
-        <Txt value={item.desc || ""} onChange={e => onChange(idx, "desc", e.target.value)} placeholder="Enter description..." style={{ minHeight: 92 }} />
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+        {actionBtn("↑ Up", () => onMove(-1), idx === 0)}
+        {actionBtn("↓ Down", () => onMove(1), idx === total - 1)}
+        {actionBtn("📋 Duplicate", onDuplicate)}
+        <div style={{ flex: 1 }} />
+        {actionBtn("✕ Delete", onRemove, total === 1, true)}
+      </div>
+
+      <Field label="Description" hint="One point per line. Press Enter for a new bullet.">
+        <Txt
+          value={item.desc || ""}
+          onChange={(e) => onChange("desc", e.target.value)}
+          placeholder="e.g.&#10;Supply of profile sheet 0.50 mm&#10;Colour: Blue, Make: AM/NS&#10;Length: 3000 mm"
+          style={{ minHeight: 120 }}
+        />
       </Field>
-      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
-        <Field label="Qty (optional)"><Inp type="number" min="0" value={item.qty || ""} onChange={e => onChange(idx, "qty", e.target.value)} placeholder="—" /></Field>
-        <Field label="Unit"><Inp value={item.unit || ""} onChange={e => onChange(idx, "unit", e.target.value)} placeholder="SQM / Nos / LS" /></Field>
-      </div>
-      <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
-        <Field label="Rate ₹ (optional)"><Inp type="number" min="0" step="0.01" value={item.rate || ""} onChange={e => onChange(idx, "rate", e.target.value)} placeholder="—" /></Field>
-        <Field label="Amount ₹">
-          <div style={{ padding: "10px 13px", background: hasAmount(item) ? "#f0ede8" : "#efefe9", borderRadius: 9, fontSize: 14, fontWeight: 700, color: hasAmount(item) ? C.accent : C.text3 }}>
-            {hasAmount(item) ? "₹" + fmt(item.amount) : "—"}
+
+      <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, padding: "10px 12px", background: C.surface2, borderRadius: 8, cursor: "pointer", fontSize: 13, color: C.text2 }}>
+        <input
+          type="checkbox"
+          checked={!!item.hasPricing}
+          onChange={(e) => onChange("hasPricing", e.target.checked)}
+          style={{ accentColor: C.accent, width: 17, height: 17, flexShrink: 0 }}
+        />
+        <span>Add <strong style={{ color: C.text }}>Qty / Unit / Rate</strong> per unit</span>
+      </label>
+
+      {item.hasPricing && (
+        <>
+          <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+            <Field label="Qty"><Inp type="number" min="0" value={item.qty || ""} onChange={(e) => onChange("qty", e.target.value)} placeholder="0" /></Field>
+            <Field label="Unit"><Inp value={item.unit || ""} onChange={(e) => onChange("unit", e.target.value)} placeholder="SQM / Nos / LS" /></Field>
           </div>
-        </Field>
-      </div>
+          <div className="g2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+            <Field label="Rate ₹"><Inp type="number" min="0" step="0.01" value={item.rate || ""} onChange={(e) => onChange("rate", e.target.value)} placeholder="0.00" /></Field>
+            <Field label="Amount ₹">
+              <div style={{ padding: "11px 13px", background: priced ? "#f7f2e2" : C.surface2, borderRadius: 9, fontSize: 15, fontWeight: 700, color: priced ? C.accent : C.text3, minHeight: 44, display: "flex", alignItems: "center" }}>
+                {priced ? `₹${fmt(item.amount)}` : "—"}
+              </div>
+            </Field>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-function DesktopItemRow({ item, idx, onChange, onRemove }) {
+// ── DESKTOP TABLE ROW ──
+function DesktopItemRow({ item, idx, total, onChange, onRemove, onDuplicate, onMove }) {
   const cellStyle = { padding: "8px 6px", borderBottom: `1px solid ${C.surface2}`, verticalAlign: "top" };
   const inpBase = { width: "100%", border: "1px solid transparent", borderRadius: 6, padding: "7px 8px", fontSize: 13, fontFamily: "inherit", background: "transparent", outline: "none" };
-  const onF = e => e.target.style.borderColor = C.accent;
-  const onB = e => e.target.style.borderColor = "transparent";
+  const onF = (e) => (e.target.style.borderColor = C.accent);
+  const onB = (e) => (e.target.style.borderColor = "transparent");
+  const priced = hasPricing(item);
   return (
     <tr>
       <td style={{ ...cellStyle, textAlign: "center", fontSize: 12, color: C.text3, width: 28, paddingTop: 14 }}>{idx + 1}</td>
@@ -46,32 +131,44 @@ function DesktopItemRow({ item, idx, onChange, onRemove }) {
           rows={Math.max(2, (item.desc || "").split("\n").length)}
           placeholder="Description (press Enter for new line / bullet)"
           value={item.desc || ""}
-          onChange={e => onChange(idx, "desc", e.target.value)}
+          onChange={(e) => onChange("desc", e.target.value)}
           onFocus={onF} onBlur={onB}
           style={{ ...inpBase, resize: "vertical", minHeight: 56, lineHeight: 1.5 }}
         />
       </td>
       <td style={{ ...cellStyle, width: 72 }}>
         <input type="number" min="0" value={item.qty || ""}
-          onChange={e => onChange(idx, "qty", e.target.value)} onFocus={onF} onBlur={onB}
-          placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
+          onChange={(e) => onChange("qty", e.target.value)}
+          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
+          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
       </td>
       <td style={{ ...cellStyle, width: 70 }}>
-        <input type="text" value={item.unit || ""} onChange={e => onChange(idx, "unit", e.target.value)} onFocus={onF} onBlur={onB}
-          placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
+        <input type="text" value={item.unit || ""} onChange={(e) => onChange("unit", e.target.value)}
+          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
+          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "center" }} />
       </td>
       <td style={{ ...cellStyle, width: 96 }}>
         <input type="number" min="0" step="0.01" value={item.rate || ""}
-          onChange={e => onChange(idx, "rate", e.target.value)} onFocus={onF} onBlur={onB}
-          placeholder="—" style={{ ...inpBase, textAlign: "right" }} />
+          onChange={(e) => onChange("rate", e.target.value)}
+          onFocus={(e) => { onF(e); if (!item.hasPricing) onChange("hasPricing", true); }}
+          onBlur={onB} placeholder="—" style={{ ...inpBase, textAlign: "right" }} />
       </td>
-      <td style={{ ...cellStyle, width: 108, textAlign: "right", paddingRight: 10, fontWeight: 700, fontSize: 13, color: hasAmount(item) ? C.accent : C.text3, whiteSpace: "nowrap" }}>
-        {hasAmount(item) ? "₹" + fmt(item.amount) : "—"}
+      <td style={{ ...cellStyle, width: 108, textAlign: "right", paddingRight: 10, fontWeight: 700, fontSize: 13, color: priced ? C.accent : C.text3, whiteSpace: "nowrap" }}>
+        {priced ? "₹" + fmt(item.amount) : "—"}
       </td>
-      <td style={{ ...cellStyle, width: 36 }}>
-        <button onClick={() => onRemove(item.id)} style={{ background: "none", border: "none", cursor: "pointer", color: C.text3, fontSize: 20, padding: "4px 8px", borderRadius: 6, lineHeight: 1 }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#fde8e8"; e.currentTarget.style.color = C.danger; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.text3; }}>×</button>
+      <td style={{ ...cellStyle, width: 96 }}>
+        <div style={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+          <button onClick={() => onMove(-1)} disabled={idx === 0} title="Move up"
+            style={{ background: "none", border: "none", cursor: idx === 0 ? "not-allowed" : "pointer", color: C.text3, fontSize: 14, padding: "4px 6px", opacity: idx === 0 ? 0.4 : 1 }}>↑</button>
+          <button onClick={() => onMove(1)} disabled={idx === total - 1} title="Move down"
+            style={{ background: "none", border: "none", cursor: idx === total - 1 ? "not-allowed" : "pointer", color: C.text3, fontSize: 14, padding: "4px 6px", opacity: idx === total - 1 ? 0.4 : 1 }}>↓</button>
+          <button onClick={onDuplicate} title="Duplicate"
+            style={{ background: "none", border: "none", cursor: "pointer", color: C.text3, fontSize: 13, padding: "4px 6px" }}>📋</button>
+          <button onClick={onRemove} title="Delete" disabled={total === 1}
+            style={{ background: "none", border: "none", cursor: total === 1 ? "not-allowed" : "pointer", color: C.text3, fontSize: 18, padding: "2px 6px", borderRadius: 6, lineHeight: 1, opacity: total === 1 ? 0.4 : 1 }}
+            onMouseEnter={(e) => { if (total > 1) { e.currentTarget.style.background = "#fde8e8"; e.currentTarget.style.color = C.danger; } }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.text3; }}>×</button>
+        </div>
       </td>
     </tr>
   );
@@ -79,49 +176,94 @@ function DesktopItemRow({ item, idx, onChange, onRemove }) {
 
 export default function Step3({ items, setItems, terms, setTerms, gstMode, setGstMode }) {
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth <= 640);
-  React.useEffect(() => {
+  const [expandedId, setExpandedId] = useState(() => (items[0] ? items[0].id : null));
+
+  useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth <= 640);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const pricedItems = items.filter(hasAmount);
+  const pricedItems = items.filter(hasPricing);
   const totSub = pricedItems.reduce((s, i) => s + (i.amount || 0), 0);
   const gstAmt = totSub * 0.18;
   const anyPriced = pricedItems.length > 0;
 
-  const handleChange = useCallback((idx, key, val) => {
-    setItems(prev => prev.map((it, i) => {
-      if (i !== idx) return it;
-      const updated = { ...it, [key]: val };
-      const q = parseFloat(key === "qty" ? val : updated.qty) || 0;
-      const r = parseFloat(key === "rate" ? val : updated.rate) || 0;
-      updated.amount = q * r;
+  const updateItem = useCallback((id, key, val) => {
+    setItems((prev) => prev.map((it) => {
+      if (it.id !== id) return it;
+      let updated = { ...it, [key]: val };
+      if (key === "hasPricing" && val === false) {
+        updated = { ...updated, qty: "", unit: "", rate: "", amount: 0 };
+      } else if (key === "qty" || key === "rate") {
+        const q = parseFloat(key === "qty" ? val : updated.qty) || 0;
+        const r = parseFloat(key === "rate" ? val : updated.rate) || 0;
+        updated.amount = q * r;
+        if ((q > 0 || r > 0) && !updated.hasPricing) updated.hasPricing = true;
+      }
       return updated;
     }));
   }, [setItems]);
 
-  const addItem = () => setItems(prev => [...prev, { id: Date.now() + Math.random(), desc: "", qty: "", unit: "", rate: "", amount: 0 }]);
-  const removeItem = (id) => setItems(prev => prev.length > 1 ? prev.filter(i => i.id !== id) : prev);
+  const addItem = () => {
+    const newItem = { id: Date.now() + Math.random(), desc: "", qty: "", unit: "", rate: "", amount: 0, hasPricing: false };
+    setItems((prev) => [...prev, newItem]);
+    setExpandedId(newItem.id);
+    setTimeout(() => {
+      const el = document.getElementById("items-end");
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
+
+  const removeItem = (id) => setItems((prev) => (prev.length > 1 ? prev.filter((i) => i.id !== id) : prev));
+
+  const duplicateItem = (id) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === id);
+      if (idx === -1) return prev;
+      const copy = { ...prev[idx], id: Date.now() + Math.random() };
+      const next = [...prev.slice(0, idx + 1), copy, ...prev.slice(idx + 1)];
+      setTimeout(() => setExpandedId(copy.id), 0);
+      return next;
+    });
+  };
+
+  const moveItem = (id, dir) => {
+    setItems((prev) => {
+      const idx = prev.findIndex((i) => i.id === id);
+      if (idx === -1) return prev;
+      const swap = idx + dir;
+      if (swap < 0 || swap >= prev.length) return prev;
+      const next = [...prev];
+      [next[idx], next[swap]] = [next[swap], next[idx]];
+      return next;
+    });
+  };
 
   const f = (k) => ({ value: terms[k] || "", onChange: (e) => setTerms(k, e.target.value) });
 
   return (
     <>
-      <Card icon="📦" title="Items / Description" sub="Press Enter inside Description to add multiple points. Qty & Rate are optional.">
+      <Card icon="📦" title="Items / Description" sub={isMobile ? "Tap a row to edit. Qty / Unit / Rate are optional." : "Press Enter inside Description for a new line. Qty & Rate are optional."}>
         {!isMobile ? (
           <div style={{ overflowX: "auto", margin: "0 -4px" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 560 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 620 }}>
               <thead>
                 <tr style={{ background: C.surface2 }}>
-                  {["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)", ""].map((h, i) => (
-                    <th key={i} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `2px solid ${C.border}`, textAlign: i >= 4 ? "right" : i === 0 ? "center" : "left", whiteSpace: "nowrap" }}>{h}</th>
+                  {["#", "Description", "Qty", "Unit", "Rate (₹)", "Amount (₹)", "Actions"].map((h, i) => (
+                    <th key={i} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: C.text3, textTransform: "uppercase", letterSpacing: "0.5px", borderBottom: `2px solid ${C.border}`, textAlign: i >= 4 && i !== 6 ? "right" : i === 0 || i === 6 ? "center" : "left", whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <DesktopItemRow key={item.id} item={item} idx={idx} onChange={handleChange} onRemove={removeItem} />
+                  <DesktopItemRow
+                    key={item.id} item={item} idx={idx} total={items.length}
+                    onChange={(key, val) => updateItem(item.id, key, val)}
+                    onRemove={() => removeItem(item.id)}
+                    onDuplicate={() => duplicateItem(item.id)}
+                    onMove={(dir) => moveItem(item.id, dir)}
+                  />
                 ))}
               </tbody>
             </table>
@@ -129,20 +271,30 @@ export default function Step3({ items, setItems, terms, setTerms, gstMode, setGs
         ) : (
           <div>
             {items.map((item, idx) => (
-              <MobileItemCard key={item.id} item={item} idx={idx} onChange={handleChange} onRemove={removeItem} />
+              <MobileAccordionItem
+                key={item.id} item={item} idx={idx} total={items.length}
+                expanded={expandedId === item.id}
+                onExpand={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                onChange={(key, val) => updateItem(item.id, key, val)}
+                onRemove={() => removeItem(item.id)}
+                onDuplicate={() => duplicateItem(item.id)}
+                onMove={(dir) => moveItem(item.id, dir)}
+              />
             ))}
           </div>
         )}
 
+        <div id="items-end" />
+
         <button onClick={addItem}
-          style={{ display: "flex", alignItems: "center", gap: 7, padding: "12px 16px", background: "none", border: `1.5px dashed ${C.border}`, borderRadius: 9, cursor: "pointer", fontSize: 13, color: C.text2, fontFamily: "inherit", width: "100%", marginTop: 10, justifyContent: "center", minHeight: 44 }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accent; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.text2; }}>
+          style={{ display: "flex", alignItems: "center", gap: 7, padding: "12px 16px", background: "none", border: `1.5px dashed ${C.border}`, borderRadius: 9, cursor: "pointer", fontSize: 13, color: C.text2, fontFamily: "inherit", width: "100%", marginTop: 10, justifyContent: "center", minHeight: 48 }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accent; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.text2; }}>
           ＋ Add Item / Description
         </button>
 
         <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 12px", background: C.surface2, borderRadius: 8, cursor: "pointer", fontSize: 13, color: C.text2 }}>
-          <input type="checkbox" checked={!!terms.showTotals} onChange={e => setTerms("showTotals", e.target.checked)}
+          <input type="checkbox" checked={!!terms.showTotals} onChange={(e) => setTerms("showTotals", e.target.checked)}
             style={{ accentColor: C.accent, width: 17, height: 17 }} />
           <span>Show subtotal, GST and Grand Total on quotation</span>
         </label>

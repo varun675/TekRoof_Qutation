@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { C, DEFAULT_TERMS } from './constants';
 import { LOGO_B64 } from './constants/assets';
 import Step1 from './components/Step1';
@@ -16,8 +16,34 @@ export default function App() {
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const [items, setItems] = useState([
-    { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429 },
+    { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429, hasPricing: true },
   ]);
+
+  const [focusedInput, setFocusedInput] = useState(false);
+  const lastFocusedRef = useRef(null);
+
+  useEffect(() => {
+    const isInput = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT');
+    const onFocusIn = (e) => {
+      if (isInput(e.target)) { lastFocusedRef.current = e.target; setFocusedInput(true); }
+    };
+    const onFocusOut = () => {
+      setTimeout(() => { if (!isInput(document.activeElement)) setFocusedInput(false); }, 40);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+    };
+  }, []);
+
+  const hideKeyboard = () => {
+    const el = lastFocusedRef.current || document.activeElement;
+    if (el && typeof el.blur === 'function') el.blur();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    setFocusedInput(false);
+  };
 
   const [company, setCompanyState] = useState({
     s_company: "Tekroof Steels Private Limited",
@@ -128,6 +154,10 @@ export default function App() {
         @media(max-width:420px){
           .prev-terms { grid-template-columns:1fr !important; }
         }
+        .hide-kb-fab { display:none; }
+        @media(max-width:900px){
+          .hide-kb-fab { display:flex; }
+        }
       `}</style>
 
       <div style={{ background:C.primary,padding:"0 14px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 20px rgba(0,0,0,0.2)" }}>
@@ -175,6 +205,25 @@ export default function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {focusedInput && (
+        <button
+          className="hide-kb-fab"
+          onMouseDown={(e) => e.preventDefault()}
+          onTouchStart={(e) => e.preventDefault()}
+          onClick={hideKeyboard}
+          aria-label="Hide keyboard"
+          style={{
+            position: "fixed", top: 68, right: 10, zIndex: 150,
+            padding: "9px 14px", border: "none", borderRadius: 999,
+            background: C.primary, color: "#fff",
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+            boxShadow: "0 6px 20px rgba(26,26,46,0.35)",
+            alignItems: "center", gap: 6, minHeight: 40,
+          }}>
+          ⌨ ↓ Hide keyboard
+        </button>
       )}
 
       {pdfLoading && (
