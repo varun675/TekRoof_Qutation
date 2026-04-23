@@ -288,8 +288,8 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
       specialLines.forEach(note => {
         const wrapped = doc.splitTextToSize(note, W-M*2-10);
         checkPage(wrapped.length * 4.5 + 4);
-        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...AC); doc.text("★", M+2, y);
-        doc.setTextColor(...DK); doc.text(wrapped, M+7, y);
+        doc.setFontSize(9); doc.setFont("helvetica","bold"); doc.setTextColor(...AC); doc.text("*", M+2, y);
+        doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...DK); doc.text(wrapped, M+7, y);
         y += wrapped.length * 4.3 + 2;
       });
       y += 4;
