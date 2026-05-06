@@ -9,7 +9,7 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = 210, H = 297, M = 14;
   let y = 0;
-  const PR = [26,26,46], AC = [200,169,81], GR = [100,100,110], LG = [240,238,232], WH = [255,255,255], DK = [30,30,50];
+  const PR = [26,26,46], AC = [200,169,81], GR = [100,100,110], LG = [240,238,232], WH = [255,255,255], DK = [30,30,50], HL = [30,64,175];
 
   const fullSubject = company.subjectPrefix + (company.subjectDetail ? " " + company.subjectDetail : "");
   const freightStr = [terms.freight, terms.freightDest].filter(Boolean).join(" — ");
@@ -195,23 +195,23 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
     // #
     doc.text(String(idx+1), M + cW[0]/2, y+5.5, {align:"center"});
-    // Description (multi-line, rate lines styled bold + accent gold with thin top divider)
+    // Description (multi-line, rate lines styled bold + deep blue with thin divider)
     styledLines.forEach((sl, i) => {
       if (sl.isRate) {
         const prevIsRate = i > 0 && styledLines[i-1].isRate;
         if (!prevIsRate) {
-          doc.setDrawColor(...AC); doc.setLineWidth(0.25);
+          doc.setDrawColor(...HL); doc.setLineWidth(0.3);
           doc.line(M + cW[0] + 2, y + 5 + i * 4.2 - 3, M + cW[0] + cW[1] - 4, y + 5 + i * 4.2 - 3);
           doc.setLineWidth(0.2);
         }
-        doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...AC);
+        doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...HL);
       } else {
         doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
       }
       doc.text(sl.text, M + cW[0] + 2, y + 5 + i * 4.2);
     });
-    // Auto GST note (always present)
-    doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(...AC);
+    // Auto GST note (always present, deep blue to stand out)
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...HL);
     doc.text("+ 18% GST extra", M + cW[0] + 2, y + 5 + styledLines.length * 4.2 + 1);
     doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
     if (showPricing) {

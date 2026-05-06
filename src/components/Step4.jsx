@@ -99,14 +99,14 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
                           const prevIsRate = li > 0 && isRateLine(arr[li-1]);
                           return (
                             <div key={li} style={{
-                              fontWeight: 700, color: C.accent, fontSize: 14, lineHeight: 1.5,
-                              ...(prevIsRate ? {} : { borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 })
+                              fontWeight: 700, color: C.highlight, fontSize: 14, lineHeight: 1.5,
+                              ...(prevIsRate ? {} : { borderTop: `1.5px solid ${C.highlight}`, marginTop: 4, paddingTop: 4 })
                             }}>{line}</div>
                           );
                         }
                         return <div key={li}>{line || " "}</div>;
                       })}
-                      <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 4 }}>+ 18% GST extra</div>
+                      <div style={{ fontSize: 12, color: C.highlight, fontWeight: 700, marginTop: 4 }}>+ 18% GST extra</div>
                     </td>
                     {showPricing && (
                       <>

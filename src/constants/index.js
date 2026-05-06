@@ -17,6 +17,7 @@ export const C = {
   surface: "#ffffff", surface2: "#f7f6f3", border: "#e0ddd5",
   text: "#1a1a2e", text2: "#6b6560", text3: "#9e9890",
   danger: "#c0392b", success: "#27ae60",
+  highlight: "#1e40af",
 };
 
 export const isRateLine = (line) => /^\s*rate\s*:/i.test(line || "");

@@ -91,7 +91,7 @@ function MobileAccordionItem({ item, idx, total, expanded, showPricing, onExpand
           style={{ minHeight: 140 }}
         />
       </Field>
-      <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 6 }}>Tip: Type "Rate: …" on its own line to highlight it. "+ 18% GST extra" is auto-added.</div>
+      <div style={{ fontSize: 11, color: C.highlight, fontWeight: 600, marginTop: 6 }}>Tip: Type "Rate: …" on its own line to highlight it. "+ 18% GST extra" is auto-added.</div>
 
       {showPricing && (
         <>
@@ -133,7 +133,7 @@ function DesktopItemRow({ item, idx, total, showPricing, onChange, onRemove, onD
           onFocus={onF} onBlur={onB}
           style={{ ...inpBase, resize: "vertical", minHeight: 70, lineHeight: 1.55 }}
         />
-        <div style={{ fontSize: 10, color: C.accent, fontStyle: "italic", padding: "2px 10px 0" }}>Tip: line starting with "Rate:" is auto-highlighted. "+ 18% GST extra" auto-added.</div>
+        <div style={{ fontSize: 10, color: C.highlight, fontWeight: 600, padding: "2px 10px 0" }}>Tip: line starting with "Rate:" is auto-highlighted. "+ 18% GST extra" auto-added.</div>
       </td>
       {showPricing && (
         <>
