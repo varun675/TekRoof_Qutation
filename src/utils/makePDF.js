@@ -180,7 +180,7 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
 
   visibleItems.forEach((item, idx) => {
     const descLines = doc.splitTextToSize(item.desc || "", cW[1]-4);
-    const gstNoteH = showPricing ? 4.2 : 0;
+    const gstNoteH = 4.2;
     const rowH = Math.max(8, descLines.length * 4.2 + 4 + gstNoteH);
     checkPage(rowH + 12, drawTableHeader);
     doc.setFillColor(...(idx%2===0?WH:LG)); doc.rect(M, y, tableW, rowH, "F");
@@ -189,12 +189,10 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     doc.text(String(idx+1), M + cW[0]/2, y+5.5, {align:"center"});
     // Description (multi-line)
     doc.text(descLines, M + cW[0] + 2, y + 5);
-    // Auto GST note (only when pricing is shown)
-    if (showPricing) {
-      doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(...AC);
-      doc.text("+ 18% GST extra", M + cW[0] + 2, y + 5 + descLines.length * 4.2 + 1);
-      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
-    }
+    // Auto GST note (always present)
+    doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(...AC);
+    doc.text("+ 18% GST extra", M + cW[0] + 2, y + 5 + descLines.length * 4.2 + 1);
+    doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
     if (showPricing) {
       const qtyTxt = item.qty || "—";
       const unitTxt = item.unit || "—";

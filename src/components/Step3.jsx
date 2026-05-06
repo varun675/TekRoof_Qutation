@@ -91,9 +91,7 @@ function MobileAccordionItem({ item, idx, total, expanded, showPricing, onExpand
           style={{ minHeight: 140 }}
         />
       </Field>
-      {showPricing && (
-        <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 6 }}>+ 18% GST extra (auto-added on the quotation)</div>
-      )}
+      <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 6 }}>+ 18% GST extra (auto-added on the quotation)</div>
 
       {showPricing && (
         <>
@@ -135,9 +133,7 @@ function DesktopItemRow({ item, idx, total, showPricing, onChange, onRemove, onD
           onFocus={onF} onBlur={onB}
           style={{ ...inpBase, resize: "vertical", minHeight: 70, lineHeight: 1.55 }}
         />
-        {showPricing && (
-          <div style={{ fontSize: 10, color: C.accent, fontStyle: "italic", padding: "2px 10px 0" }}>+ 18% GST extra (auto-added)</div>
-        )}
+        <div style={{ fontSize: 10, color: C.accent, fontStyle: "italic", padding: "2px 10px 0" }}>+ 18% GST extra (auto-added)</div>
       </td>
       {showPricing && (
         <>

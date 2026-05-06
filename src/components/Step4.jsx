@@ -95,9 +95,7 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
                     <td style={{ padding: "9px 10px", textAlign: "center", color: C.text3, width: showPricing ? undefined : 40 }}>{idx + 1}</td>
                     <td style={{ padding: "9px 10px", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>
                       {item.desc}
-                      {showPricing && (
-                        <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 4 }}>+ 18% GST extra</div>
-                      )}
+                      <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 4 }}>+ 18% GST extra</div>
                     </td>
                     {showPricing && (
                       <>
