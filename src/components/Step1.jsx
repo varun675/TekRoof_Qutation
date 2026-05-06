@@ -1,10 +1,12 @@
 import React from 'react';
-import { C } from '../constants';
+import { C, newQNumber, reviseQNumber } from '../constants';
 import { LOGO_B64 } from '../constants/assets';
 import { Card, Field, Inp, SecLabel } from './SharedUI';
 
 export default function Step1({ data, set, errors }) {
   const f = (k) => ({ value: data[k] || "", onChange: (e) => set(k, e.target.value) });
+  const onNewQuotation = () => set("q_number", newQNumber(data.q_number));
+  const onRevise       = () => set("q_number", reviseQNumber(data.q_number));
   return (
     <>
       <div style={{ background: C.primary, borderRadius: 14, padding: "16px 22px", marginBottom: 16, display: "flex", alignItems: "center", gap: 14, boxShadow: "0 4px 24px rgba(26,26,46,0.15)" }}>
@@ -45,6 +47,17 @@ export default function Step1({ data, set, errors }) {
         </div>
 
         <SecLabel>Quotation Reference</SecLabel>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <button type="button" onClick={onNewQuotation}
+            style={{ padding: "9px 14px", border: "none", borderRadius: 8, background: C.primary, color: "#fff", fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
+            ＋ New Quotation
+          </button>
+          <button type="button" onClick={onRevise}
+            style={{ padding: "9px 14px", border: `1.5px solid ${C.accent}`, borderRadius: 8, background: C.surface, color: C.accent2, fontFamily: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer", minHeight: 40 }}>
+            ↻ Revise
+          </button>
+          <span style={{ fontSize: 11, color: C.text3, marginLeft: 4 }}>or edit the number manually below</span>
+        </div>
         <div className="g3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 13 }}>
           <Field label="Quotation No." req hint="e.g. TSPL/26-27/03" err={errors.q_number}><Inp {...f("q_number")} placeholder="TSPL/26-27/03" err={errors.q_number} /></Field>
           <Field label="Date" req err={errors.q_date}><Inp {...f("q_date")} type="date" err={errors.q_date} /></Field>

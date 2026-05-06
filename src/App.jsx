@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { C, DEFAULT_TERMS } from './constants';
+import { C, DEFAULT_TERMS, DEFAULT_SPECIAL_TERMS } from './constants';
 import { LOGO_B64 } from './constants/assets';
 import Step1 from './components/Step1';
 import Step2 from './components/Step2';
@@ -9,15 +9,72 @@ import { makePDF } from './utils/makePDF';
 
 const STEP_LABELS = ["", "Next: Client Details →", "Next: Items & Terms →", "Preview Quotation →"];
 
+const STORAGE_KEY = "tspl_quotation_state_v1";
+
+const DEFAULT_COMPANY = {
+  s_company: "Tekroof Steels Private Limited",
+  s_cin: "U28990UP2020PTC132852",
+  s_address: "Gata No-1616, Baba Khera, Badarka, Unnao UP-209862",
+  s_gstin: "09AAICT0263B1ZM",
+  s_sign: "Mohit Sharma",
+  s_phone1: "9953023229",
+  s_phone2: "7042930029",
+  s_web: "www.tekroofsteels.com",
+  s_email: "sales.tekroof@gmail.com",
+  b_name: "Tekroof Steels Pvt Ltd",
+  b_acc: "2406248761680072",
+  b_ifsc: "AUBL0002487",
+  b_bank: "AU Small Finance Bank, Civil Lines Branch, Kanpur",
+  q_number: "TSPL/26-27/05",
+  q_date: "2026-04-11",
+  q_validity: "07 Days",
+  subjectPrefix: "Supply of Profile Sheet",
+  subjectDetail: "Thickness 0.50 MM Colour Blue Make AM/NS or Equivalent",
+};
+
+const DEFAULT_CLIENT = {
+  c_attn: "Mr. Jitender Singh",
+  c_company: "Rattan Singh Builders Pvt. Ltd.",
+  c_address: "Plot No. 14, Sector 62, Noida, Uttar Pradesh - 201301",
+  c_phone: "9811234567",
+  c_email: "jitender@rattanbuilders.com",
+  c_gstin: "09AABCR1234D1ZP",
+  c_ref: "RSB/PO/2026/042",
+};
+
+const DEFAULT_ITEMS = [
+  { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429 },
+];
+
+const DEFAULT_TERMS_STATE = {
+  freight: "FOR Site",
+  freightDest: "Noida Site, Sector 62",
+  delivery: "Within 2 weeks",
+  payment: "You will release 100% advance payment before dispatch as per bank details.",
+  notesExtra: DEFAULT_TERMS,
+  specialTerms: DEFAULT_SPECIAL_TERMS,
+  showPricing: false,
+  showTotals: true,
+};
+
+const loadSaved = () => {
+  try {
+    const raw = typeof window !== "undefined" && window.localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+};
+
 export default function App() {
+  const saved = loadSaved();
+
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
-  const [gstMode, setGstMode] = useState("intra");
+  const [gstMode, setGstMode] = useState(saved?.gstMode || "intra");
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  const [items, setItems] = useState([
-    { id: 1, desc: "Supply of profile sheet thickness 0.50 mm\nSupply width 1060 mm, covered width 1000 mm\nColour blue, make AM/NS or Equivalent\nLength: 3000 mm", qty: "200", unit: "Nos.", rate: "429", amount: 200*429 },
-  ]);
+  const [items, setItems] = useState(
+    Array.isArray(saved?.items) && saved.items.length ? saved.items : DEFAULT_ITEMS
+  );
 
   const [focusedInput, setFocusedInput] = useState(false);
   const lastFocusedRef = useRef(null);
@@ -45,46 +102,18 @@ export default function App() {
     setFocusedInput(false);
   };
 
-  const [company, setCompanyState] = useState({
-    s_company: "Tekroof Steels Private Limited",
-    s_cin: "U28990UP2020PTC132852",
-    s_address: "Gata No-1616, Baba Khera, Badarka, Unnao UP-209862",
-    s_gstin: "09AAICT0263B1ZM",
-    s_sign: "Mohit Sharma",
-    s_phone1: "9953023229",
-    s_phone2: "7042930029",
-    s_web: "www.tekroofsteels.com",
-    s_email: "sales.tekroof@gmail.com",
-    b_name: "Tekroof Steels Pvt Ltd",
-    b_acc: "2406248761680072",
-    b_ifsc: "AUBL0002487",
-    b_bank: "AU Small Finance Bank, Civil Lines Branch, Kanpur",
-    q_number: "TSPL/26-27/05",
-    q_date: "2026-04-11",
-    q_validity: "07 Days",
-    subjectPrefix: "Supply of Profile Sheet",
-    subjectDetail: "Thickness 0.50 MM Colour Blue Make AM/NS or Equivalent",
-  });
+  const [company, setCompanyState] = useState({ ...DEFAULT_COMPANY, ...(saved?.company || {}) });
+  const [client, setClientState] = useState({ ...DEFAULT_CLIENT, ...(saved?.client || {}) });
+  const [terms, setTermsState] = useState({ ...DEFAULT_TERMS_STATE, ...(saved?.terms || {}) });
 
-  const [client, setClientState] = useState({
-    c_attn: "Mr. Jitender Singh",
-    c_company: "Rattan Singh Builders Pvt. Ltd.",
-    c_address: "Plot No. 14, Sector 62, Noida, Uttar Pradesh - 201301",
-    c_phone: "9811234567",
-    c_email: "jitender@rattanbuilders.com",
-    c_gstin: "09AABCR1234D1ZP",
-    c_ref: "RSB/PO/2026/042",
-  });
-  const [terms, setTermsState] = useState({
-    freight: "FOR Site",
-    freightDest: "Noida Site, Sector 62",
-    delivery: "Within 2 weeks",
-    payment: "You will release 100% advance payment before dispatch as per bank details.",
-    notesExtra: DEFAULT_TERMS,
-    specialTerms: "",
-    showPricing: true,
-    showTotals: true,
-  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ company, client, items, terms, gstMode })
+      );
+    } catch {}
+  }, [company, client, items, terms, gstMode]);
 
   const setCompany = (k, v) => setCompanyState(p => ({ ...p, [k]: v }));
   const setClient  = (k, v) => setClientState(p => ({ ...p, [k]: v }));

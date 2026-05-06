@@ -7,10 +7,10 @@ export const SUBJECT_CHIPS = [
   { label: "Custom…",                 prefix: "Supply of" },
 ];
 
-export const DEFAULT_TERMS = `1. Unloading etc. will be arranged by you.
-2. Transit insurance to be covered by you.
-3. Price variation clause applicable. In case prices of raw material increase in market, our rate will increase accordingly.
-4. Material should be packed properly to avoid damage during transit.`;
+export const DEFAULT_TERMS = `Price Variation Clause: In the event of any increase in the market prices of raw materials, our quoted rates shall be revised accordingly.`;
+
+export const DEFAULT_SPECIAL_TERMS = `Unloading and related arrangements shall be carried out by you immediately upon receipt of the material at your plant.
+Halting charges shall be Rs.2,000 per day in case of any delay, for any reason.`;
 
 export const C = {
   primary: "#1a1a2e", accent: "#c8a951", accent2: "#b8943f",
@@ -22,3 +22,25 @@ export const C = {
 export const fmt = (n) => Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const fmtDate = (d) => { if (!d) return ""; const p = d.split("-"); return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d; };
 export const today = () => new Date().toISOString().split("T")[0];
+
+const stripRevision = (s) => String(s || "").replace(/-R\d+$/i, "");
+
+export const newQNumber = (s) => {
+  if (!s) return s;
+  const base = stripRevision(s);
+  const m = base.match(/^(.*?)(\d+)(\D*)$/);
+  if (!m) return base;
+  const [, head, num, tail] = m;
+  const next = String(parseInt(num, 10) + 1).padStart(num.length, "0");
+  return head + next + tail;
+};
+
+export const reviseQNumber = (s) => {
+  if (!s) return s;
+  const m = String(s).match(/^(.*)-R(\d+)$/i);
+  if (m) {
+    const [, base, n] = m;
+    return base + "-R" + (parseInt(n, 10) + 1);
+  }
+  return s + "-R1";
+};

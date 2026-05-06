@@ -93,7 +93,12 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
                 {visibleItems.map((item, idx) => (
                   <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : C.surface2, borderBottom: `1px solid ${C.border}`, verticalAlign: "top" }}>
                     <td style={{ padding: "9px 10px", textAlign: "center", color: C.text3, width: showPricing ? undefined : 40 }}>{idx + 1}</td>
-                    <td style={{ padding: "9px 10px", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{item.desc}</td>
+                    <td style={{ padding: "9px 10px", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>
+                      {item.desc}
+                      {showPricing && (
+                        <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 4 }}>+ 18% GST extra</div>
+                      )}
+                    </td>
                     {showPricing && (
                       <>
                         <td style={{ padding: "9px 10px", textAlign: "center" }}>{item.qty || "—"}</td>

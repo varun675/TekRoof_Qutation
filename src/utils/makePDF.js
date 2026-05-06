@@ -131,8 +131,9 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     y = 20;
   };
 
+  const FOOTER_RESERVED = 28; // 18mm footer + 10mm breathing room
   const checkPage = (requiredSpace, drawHeaderFn = null) => {
-    if (y > H - requiredSpace) {
+    if (y + requiredSpace > H - FOOTER_RESERVED) {
       addNewPage();
       if (drawHeaderFn) drawHeaderFn();
     }
@@ -179,7 +180,8 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
 
   visibleItems.forEach((item, idx) => {
     const descLines = doc.splitTextToSize(item.desc || "", cW[1]-4);
-    const rowH = Math.max(8, descLines.length * 4.2 + 4);
+    const gstNoteH = showPricing ? 4.2 : 0;
+    const rowH = Math.max(8, descLines.length * 4.2 + 4 + gstNoteH);
     checkPage(rowH + 12, drawTableHeader);
     doc.setFillColor(...(idx%2===0?WH:LG)); doc.rect(M, y, tableW, rowH, "F");
     doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
@@ -187,6 +189,12 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     doc.text(String(idx+1), M + cW[0]/2, y+5.5, {align:"center"});
     // Description (multi-line)
     doc.text(descLines, M + cW[0] + 2, y + 5);
+    // Auto GST note (only when pricing is shown)
+    if (showPricing) {
+      doc.setFont("helvetica","italic"); doc.setFontSize(7); doc.setTextColor(...AC);
+      doc.text("+ 18% GST extra", M + cW[0] + 2, y + 5 + descLines.length * 4.2 + 1);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...DK);
+    }
     if (showPricing) {
       const qtyTxt = item.qty || "—";
       const unitTxt = item.unit || "—";
@@ -263,6 +271,9 @@ export async function makePDF({ company, client, items, terms, gstMode }) {
     doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...GR); doc.text(l+":",bx,by);
     doc.setFont("helvetica","normal"); doc.setTextColor(...DK); doc.text(String(v || "—").substring(0,50), bx+22, by);
   }); y+=28;
+
+  // Force T&C, Special T&C, and Signature onto a fresh page
+  addNewPage();
 
   // ── TERMS & CONDITIONS (flow into remaining space; paginate only when needed) ──
   if (termLines.length || specialLines.length) {
