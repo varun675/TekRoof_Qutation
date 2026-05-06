@@ -7,10 +7,10 @@ export const SUBJECT_CHIPS = [
   { label: "Custom…",                 prefix: "Supply of" },
 ];
 
-export const DEFAULT_TERMS = `Price Variation Clause: In the event of any increase in the market prices of raw materials, our quoted rates shall be revised accordingly.`;
-
-export const DEFAULT_SPECIAL_TERMS = `Unloading and related arrangements shall be carried out by you immediately upon receipt of the material at your plant.
+export const DEFAULT_TERMS = `Unloading and related arrangements shall be carried out by you immediately upon receipt of the material at your plant.
 Halting charges shall be Rs.2,000 per day in case of any delay, for any reason.`;
+
+export const DEFAULT_SPECIAL_TERMS = `Price Variation Clause: In the event of any increase in the market prices of raw materials, our quoted rates shall be revised accordingly.`;
 
 export const C = {
   primary: "#1a1a2e", accent: "#c8a951", accent2: "#b8943f",
