@@ -1,5 +1,5 @@
 import React from 'react';
-import { C, fmt, fmtDate } from '../constants';
+import { C, fmt, fmtDate, isRateLine } from '../constants';
 import { LOGO_B64, STAMP_B64, SIG_B64 } from '../constants/assets';
 
 const isPriced = (i) => parseFloat(i.qty) > 0 && parseFloat(i.rate) > 0;
@@ -94,7 +94,18 @@ export default function Step4({ company, client, items, terms, gstMode, onEdit, 
                   <tr key={item.id} style={{ background: idx % 2 === 0 ? "#fff" : C.surface2, borderBottom: `1px solid ${C.border}`, verticalAlign: "top" }}>
                     <td style={{ padding: "9px 10px", textAlign: "center", color: C.text3, width: showPricing ? undefined : 40 }}>{idx + 1}</td>
                     <td style={{ padding: "9px 10px", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>
-                      {item.desc}
+                      {(item.desc || "").split(/\r?\n/).map((line, li, arr) => {
+                        if (isRateLine(line)) {
+                          const prevIsRate = li > 0 && isRateLine(arr[li-1]);
+                          return (
+                            <div key={li} style={{
+                              fontWeight: 700, color: C.accent, fontSize: 14, lineHeight: 1.5,
+                              ...(prevIsRate ? {} : { borderTop: `1px solid ${C.border}`, marginTop: 4, paddingTop: 4 })
+                            }}>{line}</div>
+                          );
+                        }
+                        return <div key={li}>{line || " "}</div>;
+                      })}
                       <div style={{ fontSize: 11, color: C.accent, fontStyle: "italic", marginTop: 4 }}>+ 18% GST extra</div>
                     </td>
                     {showPricing && (

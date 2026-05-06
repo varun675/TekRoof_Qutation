@@ -19,6 +19,8 @@ export const C = {
   danger: "#c0392b", success: "#27ae60",
 };
 
+export const isRateLine = (line) => /^\s*rate\s*:/i.test(line || "");
+
 export const fmt = (n) => Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 export const fmtDate = (d) => { if (!d) return ""; const p = d.split("-"); return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : d; };
 export const today = () => new Date().toISOString().split("T")[0];
